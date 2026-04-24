@@ -10,7 +10,7 @@ import type {
   PricePoint,
   ProviderStatus,
   TickerData,
-} from "../shared/types.js";
+} from "../shared/types";
 
 interface Signal {
   symbol: string;

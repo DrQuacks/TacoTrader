@@ -5,13 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>TACO Trader</title>
     <link rel="stylesheet" href="/styles.css" />
-    <script type="importmap">
-      {
-        "imports": {
-          "three": "/vendor/three.module.js"
-        }
-      }
-    </script>
   </head>
   <body>
     <main class="shell">
@@ -100,14 +93,14 @@
           <ul class="method-list">
             <li>SQLite stores ticker history, news articles, and ingest run metadata locally.</li>
             <li>Alpha Vantage is the first live provider, with bundled sample data as a fallback seed.</li>
-            <li>The server exposes JSON endpoints for bootstrap, market data, news data, and ingest.</li>
-            <li>Three.js renders a rotating 3D bar field for the selected ticker.</li>
+            <li>Vite handles the frontend dev server and build pipeline.</li>
+            <li>The Node backend serves the API and production build output.</li>
             <li>TACO signal scoring still combines dip severity, rebound, and reversal evidence.</li>
           </ul>
         </article>
       </section>
     </main>
 
-    <script type="module" src="/client/app.js"></script>
+    <script type="module" src="/src/client/app.ts"></script>
   </body>
 </html>

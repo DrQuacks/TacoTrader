@@ -1,5 +1,5 @@
 import Database from "better-sqlite3";
-import { mkdirSync, readFile, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFile, readFileSync } from "node:fs";
 import http, { IncomingMessage, ServerResponse } from "node:http";
 import path from "node:path";
 import {
@@ -20,12 +20,11 @@ const PORT = Number(process.env.PORT ?? 3000);
 const HOST = process.env.HOST ?? "127.0.0.1";
 const ROOT_DIR = path.join(__dirname, "..");
 const PUBLIC_DIR = path.join(ROOT_DIR, "public");
-const NODE_MODULES_DIR = path.join(ROOT_DIR, "node_modules");
+const CLIENT_DIST_DIR = path.join(ROOT_DIR, "dist", "client");
 const DATA_DIR = path.join(ROOT_DIR, "data");
 const DB_PATH = path.join(DATA_DIR, "taco-trader.db");
 const SAMPLE_MARKET_PATH = path.join(PUBLIC_DIR, "data", "market-data.json");
 const SAMPLE_NEWS_PATH = path.join(PUBLIC_DIR, "data", "news-data.json");
-const THREE_MODULE_PATH = path.join(NODE_MODULES_DIR, "three", "build", "three.module.js");
 const DEFAULT_SYMBOLS = ["SPY", "QQQ", "AAPL", "XLI", "XLE"];
 const ALPHA_VANTAGE_API_KEY = process.env.ALPHA_VANTAGE_API_KEY ?? "";
 
@@ -408,11 +407,11 @@ function sendFile(filePath: string, res: ServerResponse<IncomingMessage>): void 
   });
 }
 
-function getSafePublicFilePath(urlPath: string | undefined): string {
+function getSafeFilePath(baseDir: string, urlPath: string | undefined): string {
   const requestPath = urlPath === "/" || !urlPath ? "/index.html" : urlPath;
   const normalizedPath = path.normalize(requestPath).replace(/^[/\\]+/, "");
   const safePath = normalizedPath.replace(/^(\.\.[/\\])+/, "");
-  return path.join(PUBLIC_DIR, safePath);
+  return path.join(baseDir, safePath);
 }
 
 function isPoliticalMarketArticle(text: string): boolean {
@@ -673,18 +672,24 @@ http
       return;
     }
 
-    if (url.pathname === "/vendor/three.module.js") {
-      sendFile(THREE_MODULE_PATH, res);
-      return;
-    }
-
-    const filePath = getSafePublicFilePath(url.pathname);
-    if (!filePath.startsWith(PUBLIC_DIR)) {
+    const filePath = getSafeFilePath(CLIENT_DIST_DIR, url.pathname);
+    if (!filePath.startsWith(CLIENT_DIST_DIR)) {
       sendText(res, 403, "Forbidden");
       return;
     }
 
-    sendFile(filePath, res);
+    if (existsSync(filePath) && !filePath.endsWith(path.sep)) {
+      sendFile(filePath, res);
+      return;
+    }
+
+    const indexFilePath = path.join(CLIENT_DIST_DIR, "index.html");
+    if (existsSync(indexFilePath)) {
+      sendFile(indexFilePath, res);
+      return;
+    }
+
+    sendText(res, 404, "Frontend build not found. Run `npm run build` or `npm run dev`.");
   })
   .listen(PORT, HOST, () => {
     console.log(`TACO Trader is running at http://${HOST}:${PORT}`);

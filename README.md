@@ -14,10 +14,21 @@ TACO Trader is a local TypeScript web app that scores buy-the-dip opportunities 
 
 ```bash
 npm install
+npm run dev
+```
+
+Then open [http://127.0.0.1:5173](http://127.0.0.1:5173).
+
+Vite serves the frontend on port `5173` and proxies API requests to the SQLite backend on port `3001`.
+
+## Production build
+
+```bash
+npm run build
 npm start
 ```
 
-Then open [http://127.0.0.1:3000](http://127.0.0.1:3000).
+The production server serves the Vite build from `dist/client` and listens on [http://127.0.0.1:3000](http://127.0.0.1:3000).
 
 ## Live ingest
 
@@ -35,10 +46,10 @@ The app will keep data in `data/taco-trader.db`.
 - Server source: `src/server.ts`
 - Client source: `src/client/app.ts`
 - Shared types: `src/shared/types.ts`
-- Build output: `dist/server.js` and `public/client/app.js`
+- Build output: `dist/server.js` and `dist/client/`
 
 ## Notes
 
 - This is a research toy, not financial advice.
 - The bundled sample data still powers the app even before a live API key is configured.
-- Three.js is used for the visualization layer, while SQLite is the local system of record.
+- Three.js is used for the visualization layer, SQLite is the local system of record, and Vite now owns the frontend workflow.
