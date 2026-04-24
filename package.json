@@ -1,0 +1,9 @@
+{
+  "name": "taco-trader",
+  "version": "0.1.0",
+  "description": "TACO Trader app for evaluating Trump-driven market dips and rebound setups.",
+  "private": true,
+  "scripts": {
+    "start": "node server.js"
+  }
+}

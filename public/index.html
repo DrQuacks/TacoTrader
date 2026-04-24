@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TACO Trader</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <div class="hero__eyebrow">TACO Trader</div>
+        <h1>Buy-the-dip signals for Trump-driven market shocks and reversals.</h1>
+        <p class="hero__copy">
+          This prototype watches price drops around Trump statements and policy moves,
+          then scores rebound setups when the rhetoric softens, tariffs get delayed,
+          or market panic looks overdone.
+        </p>
+        <div class="hero__badges">
+          <span>Tariffs</span>
+          <span>Iran / war risk</span>
+          <span>Sanctions</span>
+          <span>Walk-backs</span>
+        </div>
+      </section>
+
+      <section class="grid">
+        <article class="panel panel--controls">
+          <div class="panel__header">
+            <h2>Signal Controls</h2>
+            <p>Tune how aggressive the model should be.</p>
+          </div>
+
+          <label class="field">
+            <span>Minimum signal score</span>
+            <input id="score-threshold" type="range" min="40" max="90" value="58" />
+            <strong id="score-threshold-value">58</strong>
+          </label>
+
+          <label class="field">
+            <span>Need policy reversal confirmation</span>
+            <input id="require-reversal" type="checkbox" checked />
+          </label>
+
+          <label class="field">
+            <span>Upload market data JSON</span>
+            <input id="market-upload" type="file" accept=".json,application/json" />
+          </label>
+
+          <label class="field">
+            <span>Upload news/events JSON</span>
+            <input id="news-upload" type="file" accept=".json,application/json" />
+          </label>
+
+          <button id="reload-sample" class="button" type="button">Reload sample data</button>
+
+          <p class="disclaimer">
+            Research tool only. It highlights setups; it does not know the future.
+          </p>
+        </article>
+
+        <article class="panel panel--summary">
+          <div class="panel__header">
+            <h2>Market Pulse</h2>
+            <p>How the current TACO environment looks across loaded tickers.</p>
+          </div>
+          <div id="summary-cards" class="summary-cards"></div>
+        </article>
+      </section>
+
+      <section class="panel">
+        <div class="panel__header">
+          <h2>Buy-the-Dip Signals</h2>
+          <p>Ranked setups with explainable scoring.</p>
+        </div>
+        <div id="signals" class="signals"></div>
+      </section>
+
+      <section class="grid grid--bottom">
+        <article class="panel">
+          <div class="panel__header">
+            <h2>Trump Event Tape</h2>
+            <p>Political catalysts the model thinks matter.</p>
+          </div>
+          <div id="event-feed" class="event-feed"></div>
+        </article>
+
+        <article class="panel">
+          <div class="panel__header">
+            <h2>Method</h2>
+            <p>How the score is built.</p>
+          </div>
+          <ul class="method-list">
+            <li>Price drop after market-moving rhetoric or policy threats</li>
+            <li>Support when affected tickers stabilize instead of cascading</li>
+            <li>Bonus when later news implies delay, carve-out, denial, or softer tone</li>
+            <li>Extra weight for broad-market ETFs and exposed sectors</li>
+            <li>Penalty when escalation continues with no reversal signal</li>
+          </ul>
+        </article>
+      </section>
+    </main>
+
+    <script src="/app.js" defer></script>
+  </body>
+</html>

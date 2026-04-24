@@ -1,0 +1,54 @@
+{
+  "events": [
+    {
+      "id": "evt-1",
+      "date": "2026-04-14",
+      "category": "war",
+      "stance": "escalation",
+      "title": "Trump escalates rhetoric on Iran and hints at hard retaliation",
+      "impact": 0.91,
+      "tickers": ["SPY", "QQQ", "XLE"],
+      "summary": "Risk assets wobble as traders price in geopolitical escalation and oil shock risk."
+    },
+    {
+      "id": "evt-2",
+      "date": "2026-04-16",
+      "category": "tariffs",
+      "stance": "escalation",
+      "title": "Trump threatens a new tariff wave on strategic imports",
+      "impact": 0.94,
+      "tickers": ["SPY", "QQQ", "AAPL", "XLI"],
+      "summary": "Manufacturing and mega-cap tech sell off on renewed trade-cost fears."
+    },
+    {
+      "id": "evt-3",
+      "date": "2026-04-18",
+      "category": "diplomacy",
+      "stance": "delay",
+      "title": "White House signals tariff timing could slip during talks",
+      "impact": 0.76,
+      "tickers": ["SPY", "QQQ", "AAPL", "XLI"],
+      "summary": "Futures improve as markets start to believe the most aggressive timeline may not stick."
+    },
+    {
+      "id": "evt-4",
+      "date": "2026-04-20",
+      "category": "war",
+      "stance": "denial",
+      "title": "Administration says there is no immediate decision for direct Iran action",
+      "impact": 0.73,
+      "tickers": ["SPY", "QQQ", "XLE"],
+      "summary": "Risk premium eases after officials tamp down expectations of a near-term strike."
+    },
+    {
+      "id": "evt-5",
+      "date": "2026-04-21",
+      "category": "tariffs",
+      "stance": "carveout",
+      "title": "Trade team floats carve-outs and exemptions for key import categories",
+      "impact": 0.7,
+      "tickers": ["SPY", "AAPL", "XLI"],
+      "summary": "Exemption chatter feeds the TACO thesis as investors rotate back into tariff-hit names."
+    }
+  ]
+}
