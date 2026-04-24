@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "./src/client",
+    "outDir": "./public",
+    "lib": ["DOM", "ES2020"],
+    "types": []
+  },
+  "include": ["src/client/app.ts"]
+}

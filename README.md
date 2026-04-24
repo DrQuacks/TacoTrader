@@ -12,10 +12,23 @@ TACO Trader is a lightweight local web app that scores "buy the dip" opportuniti
 ## Run locally
 
 ```bash
+npm install
 npm start
 ```
 
 Then open [http://localhost:3000](http://localhost:3000).
+
+## TypeScript layout
+
+- Server source: `src/server.ts`
+- Client source: `src/client/app.ts`
+- Build output: `dist/server.js` and `public/app.js`
+
+Build manually with:
+
+```bash
+npm run build
+```
 
 ## Data shape
 
@@ -57,4 +70,4 @@ News data lives in `public/data/news-data.json`:
 
 - This is a research toy, not financial advice.
 - The included data is illustrative sample data so the app works immediately.
-- The scoring model is intentionally transparent and easy to modify in `public/app.js`.
+- The scoring model is intentionally transparent and easy to modify in `src/client/app.ts`.

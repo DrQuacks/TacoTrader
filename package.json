@@ -4,6 +4,11 @@
   "description": "TACO Trader app for evaluating Trump-driven market dips and rebound setups.",
   "private": true,
   "scripts": {
-    "start": "node server.js"
+    "build": "tsc -p tsconfig.server.json && tsc -p tsconfig.client.json",
+    "start": "npm run build && node dist/server.js"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "typescript": "^6.0.3"
   }
 }
