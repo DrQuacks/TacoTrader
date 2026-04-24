@@ -1,13 +1,14 @@
 # TACO Trader
 
-TACO Trader is a lightweight local web app that scores "buy the dip" opportunities around Trump-driven market shocks and reversals under a "Trump Always Chickens Out" thesis.
+TACO Trader is a local TypeScript web app that scores buy-the-dip opportunities around Trump-driven market shocks and reversals under a Trump Always Chickens Out thesis.
 
 ## What it does
 
-- Loads stock price series and political/news events from JSON.
-- Identifies policy shock dips tied to tariffs, war rhetoric, sanctions, and similar market-moving statements.
-- Scores rebound setups based on drop severity, volatility, sentiment reversal, and evidence of walk-backs or softened policy.
-- Ranks tickers by attractiveness and explains the thesis behind each signal.
+- Loads and stores stock price series in SQLite.
+- Seeds the database from bundled sample market and news data so the app works immediately.
+- Syncs live prices and political market articles from Alpha Vantage when `ALPHA_VANTAGE_API_KEY` is set.
+- Scores rebound setups based on drop severity, volatility, sentiment reversal, and evidence of walk backs or softened policy.
+- Renders a Three.js visualization where each session becomes a 3D bar and the close path becomes a ribbon.
 
 ## Run locally
 
@@ -16,58 +17,28 @@ npm install
 npm start
 ```
 
-Then open [http://localhost:3000](http://localhost:3000).
+Then open [http://127.0.0.1:3000](http://127.0.0.1:3000).
+
+## Live ingest
+
+Set an Alpha Vantage key before using the `Sync live data` button:
+
+```bash
+export ALPHA_VANTAGE_API_KEY='your-key-here'
+npm start
+```
+
+The app will keep data in `data/taco-trader.db`.
 
 ## TypeScript layout
 
 - Server source: `src/server.ts`
 - Client source: `src/client/app.ts`
-- Build output: `dist/server.js` and `public/app.js`
-
-Build manually with:
-
-```bash
-npm run build
-```
-
-## Data shape
-
-Market data lives in `public/data/market-data.json`:
-
-```json
-{
-  "tickers": [
-    {
-      "symbol": "SPY",
-      "prices": [
-        { "date": "2026-04-13", "close": 508.2 }
-      ]
-    }
-  ]
-}
-```
-
-News data lives in `public/data/news-data.json`:
-
-```json
-{
-  "events": [
-    {
-      "id": "evt-1",
-      "date": "2026-04-16",
-      "category": "tariffs",
-      "stance": "escalation",
-      "title": "Trump floats a new tariff threat",
-      "impact": 0.8,
-      "tickers": ["SPY", "QQQ", "AAPL"],
-      "summary": "Markets sell off on fears of a renewed trade fight."
-    }
-  ]
-}
-```
+- Shared types: `src/shared/types.ts`
+- Build output: `dist/server.js` and `public/client/app.js`
 
 ## Notes
 
 - This is a research toy, not financial advice.
-- The included data is illustrative sample data so the app works immediately.
-- The scoring model is intentionally transparent and easy to modify in `src/client/app.ts`.
+- The bundled sample data still powers the app even before a live API key is configured.
+- Three.js is used for the visualization layer, while SQLite is the local system of record.

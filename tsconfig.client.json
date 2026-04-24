@@ -1,10 +1,12 @@
 {
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "rootDir": "./src/client",
+    "rootDir": "./src",
     "outDir": "./public",
     "lib": ["DOM", "ES2020"],
+    "module": "ES2020",
+    "moduleResolution": "Bundler",
     "types": []
   },
-  "include": ["src/client/app.ts"]
+  "include": ["src/client/**/*.ts", "src/shared/**/*.ts"]
 }

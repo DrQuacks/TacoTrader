@@ -5,30 +5,46 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>TACO Trader</title>
     <link rel="stylesheet" href="/styles.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "/vendor/three.module.js"
+        }
+      }
+    </script>
   </head>
   <body>
     <main class="shell">
       <section class="hero">
         <div class="hero__eyebrow">TACO Trader</div>
-        <h1>Buy-the-dip signals for Trump-driven market shocks and reversals.</h1>
+        <h1>Database-backed TACO signals with a Three.js market stage.</h1>
         <p class="hero__copy">
-          This prototype watches price drops around Trump statements and policy moves,
-          then scores rebound setups when the rhetoric softens, tariffs get delayed,
-          or market panic looks overdone.
+          This build ingests stock data, stores it in SQLite, keeps a Trump-centric event tape,
+          and renders a live 3D view of the selected ticker so the market story feels tangible.
         </p>
         <div class="hero__badges">
-          <span>Tariffs</span>
-          <span>Iran / war risk</span>
-          <span>Sanctions</span>
-          <span>Walk-backs</span>
+          <span>SQLite persistence</span>
+          <span>Alpha Vantage ingest</span>
+          <span>Three.js scene</span>
+          <span>TACO event scoring</span>
         </div>
       </section>
 
       <section class="grid">
         <article class="panel panel--controls">
           <div class="panel__header">
-            <h2>Signal Controls</h2>
-            <p>Tune how aggressive the model should be.</p>
+            <h2>Data Controls</h2>
+            <p>Sync live prices into SQLite or reload what is already stored.</p>
+          </div>
+
+          <label class="field">
+            <span>Tracked symbols</span>
+            <input id="symbol-input" type="text" value="SPY,QQQ,AAPL,XLI,XLE" />
+          </label>
+
+          <div class="button-row">
+            <button id="sync-live-data" class="button" type="button">Sync live data</button>
+            <button id="reload-database" class="button button--ghost" type="button">Reload database</button>
           </div>
 
           <label class="field">
@@ -37,41 +53,42 @@
             <strong id="score-threshold-value">58</strong>
           </label>
 
-          <label class="field">
+          <label class="field field--checkbox">
             <span>Need policy reversal confirmation</span>
             <input id="require-reversal" type="checkbox" checked />
           </label>
 
           <label class="field">
-            <span>Upload market data JSON</span>
-            <input id="market-upload" type="file" accept=".json,application/json" />
+            <span>Three.js ticker</span>
+            <select id="ticker-select"></select>
           </label>
 
-          <label class="field">
-            <span>Upload news/events JSON</span>
-            <input id="news-upload" type="file" accept=".json,application/json" />
-          </label>
-
-          <button id="reload-sample" class="button" type="button">Reload sample data</button>
-
-          <p class="disclaimer">
-            Research tool only. It highlights setups; it does not know the future.
-          </p>
+          <div id="provider-status"></div>
+          <p id="ingest-status" class="disclaimer">Loading database state...</p>
         </article>
 
         <article class="panel panel--summary">
           <div class="panel__header">
             <h2>Market Pulse</h2>
-            <p>How the current TACO environment looks across loaded tickers.</p>
+            <p>Signals and storage stats across the local TACO tape.</p>
           </div>
           <div id="summary-cards" class="summary-cards"></div>
         </article>
       </section>
 
+      <section class="panel panel--viz">
+        <div class="panel__header">
+          <h2>Three.js Market Stage</h2>
+          <p>Each daily session becomes a 3D bar and the ribbon traces the close through time.</p>
+        </div>
+        <div id="visualization-mount" class="visualization-mount"></div>
+        <div id="visualization-meta" class="visualization-meta"></div>
+      </section>
+
       <section class="panel">
         <div class="panel__header">
           <h2>Buy-the-Dip Signals</h2>
-          <p>Ranked setups with explainable scoring.</p>
+          <p>Ranked setups scored from the database-backed price and news tape.</p>
         </div>
         <div id="signals" class="signals"></div>
       </section>
@@ -80,27 +97,27 @@
         <article class="panel">
           <div class="panel__header">
             <h2>Trump Event Tape</h2>
-            <p>Political catalysts the model thinks matter.</p>
+            <p>Stored articles and policy catalysts feeding the TACO thesis.</p>
           </div>
           <div id="event-feed" class="event-feed"></div>
         </article>
 
         <article class="panel">
           <div class="panel__header">
-            <h2>Method</h2>
-            <p>How the score is built.</p>
+            <h2>How It Works</h2>
+            <p>The new stack behind ingestion, storage, and visualization.</p>
           </div>
           <ul class="method-list">
-            <li>Price drop after market-moving rhetoric or policy threats</li>
-            <li>Support when affected tickers stabilize instead of cascading</li>
-            <li>Bonus when later news implies delay, carve-out, denial, or softer tone</li>
-            <li>Extra weight for broad-market ETFs and exposed sectors</li>
-            <li>Penalty when escalation continues with no reversal signal</li>
+            <li>SQLite stores ticker history, news articles, and ingest run metadata locally.</li>
+            <li>Alpha Vantage is the first live provider, with bundled sample data as a fallback seed.</li>
+            <li>The server exposes JSON endpoints for bootstrap, market data, news data, and ingest.</li>
+            <li>Three.js renders a rotating 3D bar field for the selected ticker.</li>
+            <li>TACO signal scoring still combines dip severity, rebound, and reversal evidence.</li>
           </ul>
         </article>
       </section>
     </main>
 
-    <script src="/app.js" defer></script>
+    <script type="module" src="/client/app.js"></script>
   </body>
 </html>
