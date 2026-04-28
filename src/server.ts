@@ -4,17 +4,18 @@ import http, { IncomingMessage, ServerResponse } from "node:http";
 import path from "node:path";
 import {
   BootstrapResponse,
-  EventCategory,
-  EventStance,
   IngestRequest,
   IngestResponse,
   MarketData,
   NewsData,
-  NewsEvent,
-  PricePoint,
   ProviderStatus,
   TickerData,
 } from "./shared/types";
+import {
+  createMarketDataProvider,
+  StoredNewsEvent,
+  StoredPricePoint,
+} from "./server/marketDataProvider";
 
 const PORT = Number(process.env.PORT ?? 3000);
 const HOST = process.env.HOST ?? "127.0.0.1";
@@ -26,7 +27,6 @@ const DB_PATH = path.join(DATA_DIR, "taco-trader.db");
 const SAMPLE_MARKET_PATH = path.join(PUBLIC_DIR, "data", "market-data.json");
 const SAMPLE_NEWS_PATH = path.join(PUBLIC_DIR, "data", "news-data.json");
 const DEFAULT_SYMBOLS = ["SPY", "QQQ", "AAPL", "XLI", "XLE"];
-const ALPHA_VANTAGE_API_KEY = process.env.ALPHA_VANTAGE_API_KEY ?? "";
 
 const MIME_TYPES: Record<string, string> = {
   ".html": "text/html; charset=utf-8",
@@ -36,23 +36,11 @@ const MIME_TYPES: Record<string, string> = {
   ".svg": "image/svg+xml",
 };
 
-interface StoredPricePoint extends PricePoint {
-  open: number;
-  high: number;
-  low: number;
-  volume: number;
-}
-
-interface StoredNewsEvent extends NewsEvent {
-  source: string;
-  url: string;
-}
-
 interface NewsRow {
   id: string;
   published_at: string;
-  category: EventCategory;
-  stance: EventStance;
+  category: string;
+  stance: string;
   title: string;
   summary: string;
   source: string;
@@ -61,33 +49,10 @@ interface NewsRow {
   symbols_json: string;
 }
 
-interface AlphaDailyResponse {
-  "Meta Data"?: Record<string, string>;
-  "Time Series (Daily)"?: Record<string, Record<string, string>>;
-  Information?: string;
-  Note?: string;
-  "Error Message"?: string;
-}
-
-interface AlphaNewsItem {
-  title?: string;
-  summary?: string;
-  url?: string;
-  time_published?: string;
-  source?: string;
-  overall_sentiment_score?: number;
-  ticker_sentiment?: Array<{ ticker?: string }>;
-}
-
-interface AlphaNewsResponse {
-  feed?: AlphaNewsItem[];
-  Information?: string;
-  Note?: string;
-  "Error Message"?: string;
-}
-
 mkdirSync(DATA_DIR, { recursive: true });
 const db = new Database(DB_PATH);
+const marketDataProvider = createMarketDataProvider(ROOT_DIR);
+
 initializeDatabase();
 seedDatabaseFromSamples();
 
@@ -339,8 +304,8 @@ function getNewsData(symbols: string[]): NewsData {
     .map((row) => ({
       id: row.id,
       date: row.published_at,
-      category: row.category,
-      stance: row.stance,
+      category: row.category as StoredNewsEvent["category"],
+      stance: row.stance as StoredNewsEvent["stance"],
       title: row.title,
       summary: row.summary,
       source: row.source,
@@ -364,7 +329,9 @@ function getProviderStatus(): ProviderStatus {
   ).count;
 
   return {
-    hasAlphaVantage: Boolean(ALPHA_VANTAGE_API_KEY),
+    providerId: marketDataProvider.id,
+    providerLabel: marketDataProvider.label,
+    providerConfigured: marketDataProvider.isConfigured(),
     dbPath: DB_PATH,
     lastIngestedAt: lastRun?.completed_at ?? null,
     totalPricePoints,
@@ -414,171 +381,6 @@ function getSafeFilePath(baseDir: string, urlPath: string | undefined): string {
   return path.join(baseDir, safePath);
 }
 
-function isPoliticalMarketArticle(text: string): boolean {
-  const lower = text.toLowerCase();
-  const keywords = [
-    "trump",
-    "white house",
-    "tariff",
-    "trade",
-    "iran",
-    "sanction",
-    "administration",
-    "war",
-    "military",
-    "diplomacy",
-    "export control",
-  ];
-
-  return keywords.some((keyword) => lower.includes(keyword));
-}
-
-function deriveCategory(text: string): EventCategory {
-  const lower = text.toLowerCase();
-  if (lower.includes("tariff") || lower.includes("trade") || lower.includes("import")) {
-    return "tariffs";
-  }
-  if (lower.includes("iran") || lower.includes("war") || lower.includes("strike") || lower.includes("military")) {
-    return "war";
-  }
-  if (lower.includes("sanction")) {
-    return "sanctions";
-  }
-  if (lower.includes("rule") || lower.includes("regulation") || lower.includes("ban") || lower.includes("control")) {
-    return "regulation";
-  }
-  return "diplomacy";
-}
-
-function deriveStance(text: string): EventStance {
-  const lower = text.toLowerCase();
-  if (lower.includes("delay") || lower.includes("postpone") || lower.includes("pause")) {
-    return "delay";
-  }
-  if (lower.includes("exempt") || lower.includes("carve-out") || lower.includes("carve out")) {
-    return "carveout";
-  }
-  if (lower.includes("deny") || lower.includes("no immediate") || lower.includes("not planning")) {
-    return "denial";
-  }
-  if (lower.includes("reverse") || lower.includes("walk back") || lower.includes("soften")) {
-    return "reversal";
-  }
-  if (lower.includes("threat") || lower.includes("strike") || lower.includes("retaliat") || lower.includes("tariff")) {
-    return "escalation";
-  }
-  if (lower.includes("pressure") || lower.includes("urge")) {
-    return "pressure";
-  }
-  return "uncertainty";
-}
-
-function deriveImpact(text: string, sentimentScore: number | undefined): number {
-  const lower = text.toLowerCase();
-  let impact = 0.55 + Math.min(0.25, Math.abs(sentimentScore ?? 0));
-
-  if (lower.includes("tariff") || lower.includes("iran") || lower.includes("war")) {
-    impact += 0.12;
-  }
-  if (lower.includes("market") || lower.includes("stocks") || lower.includes("investor")) {
-    impact += 0.06;
-  }
-
-  return Math.min(0.98, Number(impact.toFixed(2)));
-}
-
-function formatAlphaPublishedAt(raw: string | undefined): string {
-  if (!raw) {
-    return new Date().toISOString().slice(0, 10);
-  }
-
-  const match = raw.match(/^(\d{4})(\d{2})(\d{2})/);
-  if (!match) {
-    return new Date().toISOString().slice(0, 10);
-  }
-
-  return `${match[1]}-${match[2]}-${match[3]}`;
-}
-
-function mapAlphaNewsItem(item: AlphaNewsItem): StoredNewsEvent | null {
-  const title = item.title?.trim() ?? "";
-  const summary = item.summary?.trim() ?? "";
-  const body = `${title} ${summary}`.trim();
-
-  if (!title || !item.url || !isPoliticalMarketArticle(body)) {
-    return null;
-  }
-
-  const tickers = (item.ticker_sentiment ?? [])
-    .map((entry) => entry.ticker?.trim().toUpperCase())
-    .filter((symbol): symbol is string => Boolean(symbol));
-
-  return {
-    id: item.url,
-    date: formatAlphaPublishedAt(item.time_published),
-    category: deriveCategory(body),
-    stance: deriveStance(body),
-    title,
-    summary: summary || "Live Alpha Vantage article relevant to the current TACO thesis.",
-    source: item.source?.trim() || "Alpha Vantage",
-    url: item.url,
-    impact: deriveImpact(body, item.overall_sentiment_score),
-    tickers: tickers.length > 0 ? tickers : DEFAULT_SYMBOLS,
-  };
-}
-
-async function fetchAlphaDaily(symbol: string): Promise<{ symbol: string; name: string; prices: StoredPricePoint[] }> {
-  const url = new URL("https://www.alphavantage.co/query");
-  url.searchParams.set("function", "TIME_SERIES_DAILY_ADJUSTED");
-  url.searchParams.set("symbol", symbol);
-  url.searchParams.set("outputsize", "compact");
-  url.searchParams.set("apikey", ALPHA_VANTAGE_API_KEY);
-
-  const response = await fetch(url);
-  const payload = (await response.json()) as AlphaDailyResponse;
-
-  if (!response.ok || payload["Error Message"] || payload.Note || !payload["Time Series (Daily)"]) {
-    throw new Error(payload["Error Message"] || payload.Note || payload.Information || `Failed to load ${symbol}`);
-  }
-
-  const series = payload["Time Series (Daily)"];
-  const prices = Object.entries(series)
-    .slice(0, 90)
-    .map(([date, values]) => ({
-      date,
-      open: Number(values["1. open"]),
-      high: Number(values["2. high"]),
-      low: Number(values["3. low"]),
-      close: Number(values["4. close"]),
-      volume: Number(values["6. volume"] ?? values["5. volume"] ?? 0),
-    }))
-    .reverse();
-
-  return {
-    symbol,
-    name: payload["Meta Data"]?.["2. Symbol"] || symbol,
-    prices,
-  };
-}
-
-async function fetchAlphaNews(symbols: string[]): Promise<StoredNewsEvent[]> {
-  const url = new URL("https://www.alphavantage.co/query");
-  url.searchParams.set("function", "NEWS_SENTIMENT");
-  url.searchParams.set("tickers", symbols.join(","));
-  url.searchParams.set("limit", "50");
-  url.searchParams.set("sort", "LATEST");
-  url.searchParams.set("apikey", ALPHA_VANTAGE_API_KEY);
-
-  const response = await fetch(url);
-  const payload = (await response.json()) as AlphaNewsResponse;
-
-  if (!response.ok || payload["Error Message"] || payload.Note) {
-    throw new Error(payload["Error Message"] || payload.Note || payload.Information || "Failed to load news");
-  }
-
-  return (payload.feed ?? []).map(mapAlphaNewsItem).filter((item): item is StoredNewsEvent => item !== null);
-}
-
 function recordIngestRun(provider: string, symbols: string[], status: string, notes: string): void {
   db.prepare(
     `
@@ -588,38 +390,29 @@ function recordIngestRun(provider: string, symbols: string[], status: string, no
   ).run(provider, JSON.stringify(symbols), new Date().toISOString(), status, notes);
 }
 
-async function ingestFromAlphaVantage(symbols: string[]): Promise<IngestResponse> {
-  if (!ALPHA_VANTAGE_API_KEY) {
-    throw new Error("Missing ALPHA_VANTAGE_API_KEY. Add it to your shell environment and retry sync.");
+async function ingestFromProvider(symbols: string[]): Promise<IngestResponse> {
+  const result = await marketDataProvider.fetch(symbols);
+
+  for (const ticker of result.tickers) {
+    upsertTicker(ticker.symbol, ticker.name);
+    upsertPriceHistory(ticker.symbol, ticker.prices, result.providerId);
   }
 
-  const warnings: string[] = [];
-
-  for (const symbol of symbols) {
-    try {
-      const daily = await fetchAlphaDaily(symbol);
-      upsertTicker(daily.symbol, daily.name);
-      upsertPriceHistory(daily.symbol, daily.prices, "alpha_vantage");
-    } catch (error) {
-      warnings.push(`${symbol}: ${error instanceof Error ? error.message : "Unknown ingest failure"}`);
-    }
+  if (result.news.length > 0) {
+    upsertNewsEvents(result.news, result.providerId);
   }
 
-  try {
-    const news = await fetchAlphaNews(symbols);
-    if (news.length > 0) {
-      upsertNewsEvents(news, "alpha_vantage");
-    }
-  } catch (error) {
-    warnings.push(`news: ${error instanceof Error ? error.message : "Unknown news ingest failure"}`);
-  }
-
-  recordIngestRun("alpha_vantage", symbols, warnings.length > 0 ? "partial" : "success", warnings.join(" | "));
+  recordIngestRun(
+    result.providerId,
+    symbols,
+    result.warnings.length > 0 ? "partial" : "success",
+    result.warnings.join(" | "),
+  );
 
   return {
     ...getBootstrapResponse(symbols),
     ingestedSymbols: symbols,
-    warnings,
+    warnings: result.warnings,
   };
 }
 
@@ -651,7 +444,7 @@ function routeApi(req: IncomingMessage, res: ServerResponse<IncomingMessage>, ur
 
   if (req.method === "POST" && url.pathname === "/api/ingest") {
     return readJsonBody<IngestRequest>(req)
-      .then((body) => ingestFromAlphaVantage((body.symbols ?? DEFAULT_SYMBOLS).map((symbol) => symbol.toUpperCase())))
+      .then((body) => ingestFromProvider((body.symbols ?? DEFAULT_SYMBOLS).map((symbol) => symbol.toUpperCase())))
       .then((payload) => sendJson(res, 200, payload))
       .catch((error: unknown) => {
         sendJson(res, 400, {
@@ -694,4 +487,5 @@ http
   .listen(PORT, HOST, () => {
     console.log(`TACO Trader is running at http://${HOST}:${PORT}`);
     console.log(`SQLite database: ${DB_PATH}`);
+    console.log(`Market data provider: ${marketDataProvider.label}`);
   });

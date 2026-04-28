@@ -588,7 +588,7 @@ function renderVisualization(): void {
 }
 
 function renderProviderStatus(provider: ProviderStatus): void {
-  const sourceLabel = provider.hasAlphaVantage ? "Alpha Vantage ready" : "Sample-only mode";
+  const sourceLabel = provider.providerConfigured ? `${provider.providerLabel} ready` : `${provider.providerLabel} not configured`;
   const seedLabel = provider.seededFromSample
     ? "Seeded from bundled sample data"
     : "Contains live ingested market data";
@@ -598,6 +598,7 @@ function renderProviderStatus(provider: ProviderStatus): void {
     <div class="signal-card provider-card">
       <div class="signal-card__facts">
         <span class="pill pill--cool">${sourceLabel}</span>
+        <span class="pill">${provider.providerId}</span>
         <span class="pill">${seedLabel}</span>
       </div>
       <p class="meta">Database: ${provider.dbPath}</p>

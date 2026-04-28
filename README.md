@@ -6,7 +6,7 @@ TACO Trader is a local TypeScript web app that scores buy-the-dip opportunities 
 
 - Loads and stores stock price series in SQLite.
 - Seeds the database from bundled sample market and news data so the app works immediately.
-- Syncs live prices and political market articles from Alpha Vantage when `ALPHA_VANTAGE_API_KEY` is set.
+- Syncs live prices and political market articles through an internal provider layer, currently backed by `yfinance`.
 - Scores rebound setups based on drop severity, volatility, sentiment reversal, and evidence of walk backs or softened policy.
 - Renders a Three.js visualization where each session becomes a 3D bar and the close path becomes a ribbon.
 
@@ -32,14 +32,23 @@ The production server serves the Vite build from `dist/client` and listens on [h
 
 ## Live ingest
 
-Set an Alpha Vantage key before using the `Sync live data` button:
+The default live provider is `yfinance`, installed into the project-local virtual environment at `.venv`.
+
+If you need to rebuild that environment:
 
 ```bash
-export ALPHA_VANTAGE_API_KEY='your-key-here'
-npm start
+python3 -m venv .venv
+.venv/bin/python -m pip install yfinance
 ```
 
 The app will keep data in `data/taco-trader.db`.
+
+## Provider abstraction
+
+- The backend talks to a single provider interface in `src/server/marketDataProvider.ts`.
+- The current implementation is `yfinance`, reached through `scripts/fetch_yfinance.py`.
+- The rest of the app does not know which external API is in use.
+- To switch providers later, add another provider implementation and update `createMarketDataProvider(...)`.
 
 ## TypeScript layout
 

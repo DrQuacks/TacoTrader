@@ -46,7 +46,9 @@ export interface NewsData {
 }
 
 export interface ProviderStatus {
-  hasAlphaVantage: boolean;
+  providerId: string;
+  providerLabel: string;
+  providerConfigured: boolean;
   dbPath: string;
   lastIngestedAt: string | null;
   totalPricePoints: number;
