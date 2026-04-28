@@ -1,5 +1,4 @@
 import { spawn } from "node:child_process";
-import path from "node:path";
 import { EventCategory, EventStance, NewsEvent, PricePoint } from "../shared/types";
 
 export interface StoredPricePoint extends PricePoint {
@@ -137,9 +136,8 @@ class YFinanceProvider implements MarketDataProvider {
   }
 
   async fetch(symbols: string[]): Promise<ProviderFetchResult> {
-    const pythonPath = path.join(this.rootDir, ".venv", "bin", "python");
-    const scriptPath = path.join(this.rootDir, "scripts", "fetch_yfinance.py");
-    const raw = await runPythonScript(pythonPath, scriptPath, symbols);
+    const scriptPath = "scripts/fetch_yfinance.py";
+    const raw = await runUvPython(this.rootDir, scriptPath, symbols);
     const result = JSON.parse(raw) as YFinanceScriptResult;
 
     const filteredNews = result.news
@@ -174,10 +172,10 @@ class YFinanceProvider implements MarketDataProvider {
   }
 }
 
-function runPythonScript(pythonPath: string, scriptPath: string, symbols: string[]): Promise<string> {
+function runUvPython(rootDir: string, scriptPath: string, symbols: string[]): Promise<string> {
   return new Promise((resolve, reject) => {
-    const child = spawn(pythonPath, [scriptPath, ...symbols], {
-      cwd: path.dirname(scriptPath),
+    const child = spawn("uv", ["run", "python", scriptPath, ...symbols], {
+      cwd: rootDir,
       stdio: ["ignore", "pipe", "pipe"],
     });
 

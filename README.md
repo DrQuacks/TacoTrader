@@ -32,13 +32,12 @@ The production server serves the Vite build from `dist/client` and listens on [h
 
 ## Live ingest
 
-The default live provider is `yfinance`, installed into the project-local virtual environment at `.venv`.
+The default live provider is `yfinance`, managed with `uv`.
 
-If you need to rebuild that environment:
+Set up or refresh the Python side with:
 
 ```bash
-python3 -m venv .venv
-.venv/bin/python -m pip install yfinance
+uv sync
 ```
 
 The app will keep data in `data/taco-trader.db`.
@@ -49,6 +48,13 @@ The app will keep data in `data/taco-trader.db`.
 - The current implementation is `yfinance`, reached through `scripts/fetch_yfinance.py`.
 - The rest of the app does not know which external API is in use.
 - To switch providers later, add another provider implementation and update `createMarketDataProvider(...)`.
+
+## Python project files
+
+- `pyproject.toml` declares Python dependencies
+- `uv.lock` locks them
+- `.python-version` pins the intended Python version
+- `.venv/` is the local environment managed by `uv`
 
 ## TypeScript layout
 
